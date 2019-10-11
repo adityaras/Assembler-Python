@@ -1,0 +1,11 @@
+//This is a comment 1
+CLA
+LAC 1000
+ADD '3'
+SUB vara
+BRZ L1
+L1: ADD c
+STP
+vara DW 1456
+c DW 1458
+/* Comment of Type 2 */
