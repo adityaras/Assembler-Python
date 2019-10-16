@@ -1,10 +1,9 @@
 import sys
 
-
 loc_ctr = 0
 prog_ctr = 0
 sym_table = dict()
-opcode_table = list()
+opcode_table = dict()
 literal_table = dict()
 label_logs = list()
 variable_logs = set()
@@ -28,7 +27,7 @@ opcode_conversion_table = {
 def check_comment(instruction_line):
     if instruction_line[:2] == "//":
         return True
-    elif instruction_line[:2] == "/" and instruction_line[-2:] == "/":
+    elif instruction_line[:2] == "/*" and instruction_line[-2:] == "*/":
         return True
     else:
         return False
@@ -117,13 +116,21 @@ def verify_opcode(instruction_line):
         if opcode == "CLA":
             return len(instruction_line) == 3
         elif opcode == "LAC":
-            return instruction_line[3] == " " and (instruction_line[4:].isdigit() or variable_declared(instruction_line))
+            return instruction_line[3] == " " and (
+                        instruction_line[4:].isdigit() or variable_declared(instruction_line))
         elif opcode == "SAC":
-            return instruction_line[3] == " " and (instruction_line[4:].isdigit() or variable_declared(instruction_line))
+            return instruction_line[3] == " " and (
+                        instruction_line[4:].isdigit() or variable_declared(instruction_line))
         elif opcode == "ADD":
-            return instruction_line[3] == " " and (variable_declared(instruction_line) or instruction_line[4:].isdigit() or check_literal(instruction_line) == (0, instruction_line.find("'") + 1, instruction_line.find("'", instruction_line.find("'") + 1)))
+            return instruction_line[3] == " " and (
+                        variable_declared(instruction_line) or instruction_line[4:].isdigit() or check_literal(
+                    instruction_line) == (
+                        0, instruction_line.find("'") + 1, instruction_line.find("'", instruction_line.find("'") + 1)))
         elif opcode == "SUB":
-            return instruction_line[3] == " " and (variable_declared(instruction_line) or instruction_line[4:].isdigit() or check_literal(instruction_line) == (0, instruction_line.find("'") + 1, instruction_line.find("'", instruction_line.find("'") + 1)))
+            return instruction_line[3] == " " and (
+                        variable_declared(instruction_line) or instruction_line[4:].isdigit() or check_literal(
+                    instruction_line) == (
+                        0, instruction_line.find("'") + 1, instruction_line.find("'", instruction_line.find("'") + 1)))
         elif opcode == "MUL":
             return instruction_line[3] == " " and (
                     variable_declared(instruction_line) or instruction_line[4:].isdigit() or check_literal(
@@ -162,6 +169,8 @@ def pass_one():
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
+            str_temporary = line.split(' #')
+            line = str_temporary[0]
             instruction_table.append(line)
     for line in instruction_table:
         if not flag:
@@ -185,7 +194,7 @@ def pass_one():
                     sym_table[line[:label_end_index]] = prog_ctr
                     label_logs.append(line[:label_end_index])
                     if check_opcode(line[label_end_index + 2:]):
-                        opcode_table.append(line[label_end_index + 2:])
+                        opcode_table[line[label_end_index + 2:]] = str(bin(loc_ctr))[2:]
                         if line[label_end_index + 2:] == "STP":
                             continue
                         elif variable_declared(line[label_end_index + 2:]):
@@ -207,7 +216,7 @@ def pass_one():
                     print(" E02: Variable Declared but not Used")
                     sym_table[line[:ind_ws]] = line[ind_ws + 4:]
             elif check_opcode(line):
-                opcode_table.append(line)
+                opcode_table[line] = str(bin(loc_ctr))[2:]
                 if not verify_opcode(line):
                     print(" E03: Incorrect Syntax For Opcode")
                     sys.exit()
@@ -239,10 +248,13 @@ def pass_one():
 
 
 def pass_two():
+
     f = open("Result.txt", "w+")
+
     zero = '0'
-    for line in opcode_table:
+    for line in opcode_table.keys():
         str_instruction = ''
+        str_instruction = zero * (20 - len(opcode_table[line])) + opcode_table[line] + ' '
         str_instruction = str_instruction + opcode_conversion_table[line[:3]] + ' '
         str_temp = ''
         if len(line) > 3:
@@ -260,7 +272,8 @@ def pass_two():
         str_instruction = str_instruction + str_temp
         f.write(str_instruction)
 
-
 if __name__ == '__main__':
+
     pass_one()
+
     pass_two()
